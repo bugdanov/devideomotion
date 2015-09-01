@@ -2501,6 +2501,7 @@ vjs.Component.prototype.one = function(first, second, third) {
  * @return {vjs.Component}       self
  */
 vjs.Component.prototype.trigger = function(event){
+  console.log(event.type);
   vjs.trigger(this.el_, event);
   return this;
 };
