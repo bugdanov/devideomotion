@@ -99,7 +99,7 @@ var views={
              views.video.frameCount=Math.floor(views.video.player.duration()*views.video.fps+1);
 
              // set gamma threshold to one frame
-             webapp.deviceOrientation.threshold.gamma=(2*views.video.maxGamma+1)/views.video.frameCount;
+             webapp.deviceOrientation.threshold.gamma=(2*views.video.maxGamma)/views.video.frameCount;
 
            } else {
              console.log('canplaythrough');
@@ -210,7 +210,7 @@ var views={
         }
       }
 
-      var targetTime=views.video.player.duration()*(gamma+views.video.maxGamma)/(2*views.video.maxGamma+1);
+      var targetTime=views.video.player.duration()*(gamma+views.video.maxGamma)/(2*views.video.maxGamma);
 
       views.video[views.video.transition](targetTime);
 
