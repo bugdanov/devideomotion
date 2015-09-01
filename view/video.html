@@ -1,3 +1,16 @@
+<style>
+
+  #video .info {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    margin: 10px;
+    color: white;
+    font-size: 2em;
+  }
+
+</style>
+
 <div id="video" class="hidden">
   <video id="test" class="video-js vjs-default-skin" preload="true" width="auto" height="auto" controls>
     <source src="video.webm" type="video/webm">
@@ -6,4 +19,5 @@
       that <a href="http://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
     </p>
   </video>
+  <div class="info"></div>
 </div>

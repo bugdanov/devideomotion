@@ -48,6 +48,31 @@ var views={
     fps: 30,
 
     /**
+    * @property views.video.maxGamma
+    *
+    * @value {Number} degrees - clamp deviceOrientation gamma to +/- this value
+    *
+    */
+    maxGamma: 37.5,
+
+    /**
+    * @property views.video.transition
+    *
+    * @value {String} "jump" - jump to target frame on deviceOrientation change event
+    * @value {String} "seek" - play video continuously up to target frame, stop on gamma < threshold
+    *
+    */
+    transition: "jump",
+
+    /**
+    * @property views.video.threshold
+    *
+    * @value {Number} angle - when transition == "seek", video playback will stop when gamma is lesser than this
+    *
+    */
+    threshold: 10,
+
+    /**
     * @method views.video.onready
     */
     onready: function views_video_onready() {
@@ -60,11 +85,27 @@ var views={
     */
     videojs_init: function views_video_videojs_init() {
 
+      var count=0;
       views.video.player=videojs('test')
         .on('canplaythrough', function views_video_player_oncanplaythrough(){
-           views.video.player.currentTime(views.video.player.duration()/2);
-           views.video.getElem().removeClass('hidden');
-           views.video.canplaythrough=true;
+           ++count;
+           if (count==1) {
+             views.video.player.currentTime(views.video.player.duration());
+             views.video.player.currentTime(views.video.player.duration()/2);
+             views.video.getElem().removeClass('hidden');
+             views.video.canplaythrough=true;
+
+             // compute frame count (fps must be known)
+             views.video.frameCount=Math.floor(views.video.player.duration()*views.video.fps+1);
+
+             // set gamma threshold to one frame
+             webapp.deviceOrientation.threshold.gamma=(2*views.video.maxGamma+1)/views.video.frameCount;
+
+           } else {
+             console.log('canplaythrough');
+             return;
+           }
+
         })
         .ready(function views_video_player_onready(){
            var player = this;
@@ -72,8 +113,12 @@ var views={
         .on('play',function views_video_player_onplay(){
           views.video.player.pause();
           views.video.ready=true;
+
         })
         .on('seeked',function views_video_player_onseeked(){
+
+          $('.info',views.video.container).text('Frame '+(views.video.getCurrentFrameNumber()+1)+'/'+views.video.frameCount);
+
           if (views.video.seeking) {
             views.video.seekNext();
           }
@@ -82,11 +127,31 @@ var views={
     }, // views.video.videojs_init
 
     /**
+    * @method views.video.getCurrentFrameNumber
+    * @return {Number} [frame] current frame number
+    *
+    */
+    getCurrentFrameNumber: function views_video_getCurrentFrameNumber() {
+      return Math.floor(views.video.player.currentTime()*views.video.fps);
+    }, // views_video_getCurrentFrameNumber
+
+    /**
+     * @method views.video.jump
+     * @param {Number} [seconds] the target video position
+     *
+     */
+    jump: function views_video_jump(targetTime) {
+        views.video.player.currentTime(targetTime);
+
+    }, // views.video.jump
+
+    /**
      * @method views.video.seek
      * @param {Number} [seconds] the target video position
      *
      */
     seek: function views_video_seek(targetTime) {
+
       var currentTime=views.video.player.currentTime();
 
       views.video.targetTime=targetTime;
@@ -126,22 +191,28 @@ var views={
         return;
       }
 
+      console.log('change');
+
       if (!views.video.player.paused()) {
         views.video.player.pause();
       }
 
       var deviceOrientation=this;
       var gamma=deviceOrientation.current.gamma;
-      gamma=Math.max(gamma,-30);
-      gamma=Math.min(gamma,30);
+      gamma=Math.max(gamma,-views.video.maxGamma);
+      gamma=Math.min(gamma,views.video.maxGamma);
 
-      if (Math.abs(gamma)<5) {
-        views.video.targetTime=views.video.player.currentTime();
-        return;
+      if (views.video.transition=="seek") {
+        if (Math.abs(gamma)<views.video.threshold) {
+          // stop seeking
+          views.video.targetTime=views.video.player.currentTime();
+          return;
+        }
       }
 
-      var targetTime=views.video.player.duration()*(gamma+30)/60;
-      views.video.seek(targetTime);
+      var targetTime=views.video.player.duration()*(gamma+views.video.maxGamma)/(2*views.video.maxGamma+1);
+
+      views.video[views.video.transition](targetTime);
 
     }, // views.video.ondeviceorientationchange
 
@@ -183,7 +254,9 @@ var webapp={
       * @property webapp.deviceOrientation.threshold
       */
       threshold: {
-        gamma: 1
+        alpha: 999,
+        beta: 999
+        // gamma to be set on video ready
       },
 
       /**
@@ -291,4 +364,3 @@ var webapp={
 $(document).ready(function(){
   webapp.init();
 });
-:
