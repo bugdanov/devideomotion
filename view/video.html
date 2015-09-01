@@ -9,10 +9,31 @@
     font-size: 2em;
   }
 
+  #video.hidden {
+    visibility: hidden;
+  }
+
+  #video .video-js .vjs-tech {
+    height: auto !important;
+    position: relative !important;
+  }
+
+  #video .vjs-default-skin .vjs-big-play-button {
+    top: 0;
+    left: 0;
+    height:100%;
+    width: 100%;
+  }
+
+  #video .vjs-default-skin .vjs-big-play-button:before {
+    height: 100%;
+    top: 40%;
+  }
+
 </style>
 
 <div id="video" class="hidden">
-  <video id="test" class="video-js vjs-default-skin" preload="true" width="auto" height="auto" controls>
+  <video id="test" class="video-js vjs-default-skin" preload="auto" width="auto" height="auto" controls>
     <source src="video.webm" type="video/webm">
     <p class="vjs-no-js">
       To view this video please enable JavaScript, and consider upgrading to a web browser
