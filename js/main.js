@@ -85,46 +85,88 @@ var views={
     */
     videojs_init: function views_video_videojs_init() {
 
-      var count=0;
+      var loadedData=0;
+      var seeked=0;
       views.video.player=videojs('test')
-        .on('canplaythrough', function views_video_player_oncanplaythrough(){
-           ++count;
-           if (count==1) {
-             views.video.player.currentTime(views.video.player.duration());
-             views.video.player.currentTime(views.video.player.duration()/2);
-             views.video.getElem().removeClass('hidden');
-             views.video.canplaythrough=true;
 
-             // compute frame count (fps must be known)
-             views.video.frameCount=Math.floor(views.video.player.duration()*views.video.fps+1);
+        // preload full video before displaying container
+        .on('loadeddata', views.video.onloadeddata)
 
-             // set gamma threshold to one frame
-             webapp.deviceOrientation.threshold.gamma=(2*views.video.maxGamma)/views.video.frameCount;
-
-           } else {
-             console.log('canplaythrough');
-             return;
-           }
-
-        })
-        .ready(function views_video_player_onready(){
-           var player = this;
-        })
-        .on('play',function views_video_player_onplay(){
+        // pause video on play
+        .on('play',function views_video_onplay(){
           views.video.player.pause();
-          views.video.ready=true;
-
         })
-        .on('seeked',function views_video_player_onseeked(){
 
-          $('.info',views.video.container).text('Frame '+(views.video.getCurrentFrameNumber()+1)+'/'+views.video.frameCount);
-
-          if (views.video.seeking) {
-            views.video.seekNext();
-          }
-        });
+        // display frame info
+        .on('seeked', views.video.onseeked);
 
     }, // views.video.videojs_init
+
+    /**
+    * @method views.video.onloadeddata
+    */
+    onloadeddata: function views_video_onloadeddata() {
+
+      // run only once
+      views.video.player.off('loadeddata',views.video.onloadeddata);
+
+      // setup loadeddata "seeked" event handler for video preload
+      views.video.onloadeddata.onseeked=function() {
+
+        if (views.video.alreadyPreloaded) {
+
+          // unbind loadeddata "seeked" event handler
+          views.video.player.off('seeked',views.video.onloadeddata.onseeked);
+
+          // show video container
+          views.video.getElem().removeClass('hidden');
+
+          // allow seeking on deviceorientationchange
+          views.video.ready=true;
+
+          return;
+        }
+
+        // compute frame count (fps must be specified manually)
+        views.video.frameCount=Math.floor(views.video.player.duration()*views.video.fps+1);
+
+        // set gamma threshold to one frame (for triggering deviceorientationchange events)
+        webapp.deviceOrientation.threshold.gamma=(2*views.video.maxGamma)/views.video.frameCount;
+
+        // video is preloaded, jump to half duration frame
+        views.video.alreadyPreloaded=true;
+        views.video.player.currentTime(views.video.player.duration()/2);
+
+      } // views.video.onloadeddata.onseeked
+
+      // setup loadeddata seeked handler
+      views.video.player.on('seeked', views.video.onloadeddata.onseeked);
+
+      // jump to last frame
+      views.video.player.currentTime(views.video.player.duration());
+
+    }, // views.video.onloadeddata
+
+    /**
+    * @method views.video.onseeked
+    *
+    */
+    onseeked: function views_video_onseeked() {
+
+      if (!views.video.ready) {
+        return;
+      }
+
+      // display current frame number
+      $('.info',views.video.container)
+        .text('Frame '+(views.video.getCurrentFrameNumber()+1)+'/'+views.video.frameCount);
+
+      // when seeking (video.transition is "seek"), seek to next frame
+      if (views.video.seeking) {
+        views.video.seekNext();
+      }
+
+    }, // views.video.onseeked
 
     /**
     * @method views.video.getCurrentFrameNumber
@@ -133,6 +175,7 @@ var views={
     */
     getCurrentFrameNumber: function views_video_getCurrentFrameNumber() {
       return Math.floor(views.video.player.currentTime()*views.video.fps);
+
     }, // views_video_getCurrentFrameNumber
 
     /**
@@ -315,7 +358,7 @@ var webapp={
         gyronorm.start();
 
       }).catch(function(e){
-        console.log(e);
+        alert(e);
       });
 
     }, // webapp_gyronorm_init
