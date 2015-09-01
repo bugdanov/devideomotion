@@ -1,31 +1,7 @@
-html {
+html,body {
   height: 100%;
   width: 100%;
   overflow: hidden;
-}
-
-#video.hidden {
-  visibility: hidden;
-}
-
-
-.video-js .vjs-tech {
-  height: auto !important;
-  position: relative !important;
-}
-
-
-.vjs-default-skin .vjs-big-play-button {
-  top: 0;
-  left: 0;
-  height:100%;
-  width: 100%;
-  
-
-  
-}
-
-.vjs-default-skin .vjs-big-play-button:before {
-  height: 100%;
-  top: 40%;
+  background-color: black;
+  color: white;
 }
